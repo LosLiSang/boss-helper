@@ -30,7 +30,9 @@ export const bossWorkflow = defineTaskWorkflow<BossHelperCtx, BoosJobData>(
   tasks.SameCompanyFilter(), // 相同公司过滤
   tasks.SameHrFilter(), // 相同hr过滤
   tasks.jobTitle(), // 岗位名筛选
+  tasks.blockedCompany(), // 卡片右键屏蔽公司
   tasks.company(), // 公司名筛选
+  tasks.blockedHr(), // 卡片右键屏蔽HR
   tasks.salaryRange(), // 薪资筛选
   tasks.companySizeRange(), // 公司规模筛选
   tasks.goldHunterFilter(), // 猎头过滤
@@ -49,6 +51,7 @@ export const bossWorkflow = defineTaskWorkflow<BossHelperCtx, BoosJobData>(
   tasks.jobAddress({ deps: ['岗位详情获取'] }), // 工作地址筛选
   tasks.jobFriendStatus({ deps: ['岗位详情获取'] }), // 好友状态过滤
   tasks.jobContent({ deps: ['岗位详情获取'] }), // 工作内容筛选
+  tasks.jdPreference({ deps: ['岗位详情获取'] }), // JD倾向筛选
 
   defineTaskHandler(
     '金牌面试官',

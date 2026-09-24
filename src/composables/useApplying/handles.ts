@@ -202,6 +202,32 @@ export class TaskRegistry<C extends HelperContext<C, T, S>, T, S = {}> {
     }
   })
 
+  blockedCompany = defineTaskHandler<C, T, S>('屏蔽公司', (ctx) => {
+    const values = ctx.helper.conf.formData.blockedCompanies
+    if (!values.length) {
+      return
+    }
+    return async (_, { jobData: data }) => {
+      const company = data.brand.name.trim().toLowerCase()
+      if (company && values.some((item) => item.trim().toLowerCase() === company)) {
+        return taskResult.skip(`公司已屏蔽 [${data.brand.name}]`)
+      }
+    }
+  })
+
+  blockedHr = defineTaskHandler<C, T, S>('屏蔽HR', (ctx) => {
+    const values = ctx.helper.conf.formData.blockedHrs
+    if (!values.length) {
+      return
+    }
+    return async (_, { jobData: data }) => {
+      const hr = data.boss.name.trim().toLowerCase()
+      if (hr && values.some((item) => item.trim().toLowerCase() === hr)) {
+        return taskResult.skip(`HR已屏蔽 [${data.boss.name}]`)
+      }
+    }
+  })
+
   salaryRange = defineTaskHandler<C, T, S>('薪资范围', (ctx) => {
     if (!ctx.helper.conf.formData.salaryRange.enable) {
       return
@@ -259,6 +285,34 @@ export class TaskRegistry<C extends HelperContext<C, T, S>, T, S = {}> {
       }
       if (ctx.helper.conf.formData.jobContent.include) {
         return taskResult.skip('工作内容中不包含关键词')
+      }
+    }
+  })
+
+  jdPreference = defineTaskHandler<C, T, S>('JD倾向', (ctx) => {
+    if (!ctx.helper.conf.formData.jdPreference.enable) {
+      return
+    }
+    const values = ctx.helper.conf.formData.jdPreference.value
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean)
+    if (!values.length) {
+      return
+    }
+    return async (_, { jobData }) => {
+      const content = jobData.jobDescription.trim().toLowerCase()
+      if (!content) {
+        return taskResult.skip('岗位描述为空，无法匹配JD倾向')
+      }
+      const matched = values.find((item) => content.includes(item))
+      if (ctx.helper.conf.formData.jdPreference.include) {
+        if (!matched) {
+          return taskResult.skip('岗位描述不包含JD倾向关键词')
+        }
+        return
+      }
+      if (matched) {
+        return taskResult.skip(`岗位描述含有排除倾向关键词 [${matched}]`)
       }
     }
   })

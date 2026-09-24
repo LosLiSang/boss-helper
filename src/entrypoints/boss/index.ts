@@ -286,9 +286,18 @@ export class BossHelperCtx extends HelperContext<BossHelperCtx, BoosJobData, {}>
     //   const menuElement = document.createElement('boss-helper-menu')
     //   document.body.appendChild(menuElement)
     // }
-    const elm = await elmGetter.get(
-      '.job-search-wrapper,.job-recommend-main,.page-jobs .page-jobs-main',
+    let elm = await elmGetter.get(
+      '.job-recommend-main,.page-jobs .page-jobs-main,.page-jobs-main,.page-job-wrapper,#wrap',
+      3000,
     )
+    if (!elm) {
+      elm =
+        document.querySelector('.job-recommend-main') ||
+        document.querySelector('.page-jobs-main') ||
+        document.querySelector('.page-job-wrapper') ||
+        document.querySelector('#wrap') ||
+        document.body
+    }
 
     const appElement = document.createElement('boss-helper-job')
     BossHelperCtx.instance = appElement

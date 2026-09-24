@@ -17,8 +17,11 @@ export interface FormData {
   company: FormDataSelect
   jobTitle: FormDataSelect
   jobContent: FormDataSelect
+  jdPreference: FormDataSelect
   hrPosition: FormDataSelect
   jobAddress: FormDataSelect
+  blockedCompanies: string[]
+  blockedHrs: string[]
   salaryRange: FormSalaryRangeInput
   companySizeRange: FormDataRangeInput
   customGreeting: FormDataInput

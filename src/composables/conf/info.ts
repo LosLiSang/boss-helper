@@ -37,6 +37,14 @@ export const formInfoData: Record<string, any> = {
     'data-help':
       "会自动检测上文(不是,不,无需),下文(系统,工具),例子：[外包,上门,销售,驾照], 排除: '外包岗位', 不排除: '不是外包'|'销售系统'",
   },
+  jdPreference: {
+    label: 'JD 倾向',
+    'data-help': '岗位描述中至少包含一个关键词才会投递，可通过卡片右键快速添加。',
+  },
+  blockedRules: {
+    label: '卡片右键规则',
+    'data-help': '通过职位卡片右键添加的公司与 HR 黑名单。',
+  },
   hrPosition: {
     label: 'Hr职位',
     'data-help':
@@ -155,6 +163,12 @@ export const defaultFormData: FormData = {
     options: [],
     enable: false,
   },
+  jdPreference: {
+    include: true,
+    value: [],
+    options: [],
+    enable: false,
+  },
   hrPosition: {
     include: true,
     value: [],
@@ -211,6 +225,8 @@ export const defaultFormData: FormData = {
   goldHunterFilter: {
     value: false,
   },
+  blockedCompanies: [],
+  blockedHrs: [],
   notification: {
     value: true,
   },

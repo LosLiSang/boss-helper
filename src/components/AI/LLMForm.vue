@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { InputMenuItem } from '@nuxt/ui'
+import type { InputMenuItem } from '@nuxt/ui'
 import { reactive } from 'vue'
 
 import LLMFormItem from '@/components/AI/LLMFormItem.vue'

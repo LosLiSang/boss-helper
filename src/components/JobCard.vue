@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
+import { useConf } from '@/composables/conf'
 import { JobStatus } from '@/composables/useApplying/type'
 import { JobData, useHelper } from '@/composables/useHelper'
 
 const helper = useHelper()
+const conf = useConf()
 
 const props = defineProps<{
   job: JobData
@@ -40,6 +42,40 @@ const showDescription = ref(false)
 const showDescriptionLoading = ref(false)
 const showDescriptionMessage = ref<string | null>(null)
 
+const isCompanyBlocked = computed(() => {
+  const company = props.job.brand.name.trim().toLowerCase()
+  return conf.formData.blockedCompanies.some((item) => item.trim().toLowerCase() === company)
+})
+
+const isHrBlocked = computed(() => {
+  const hr = props.job.boss.name.trim().toLowerCase()
+  return conf.formData.blockedHrs.some((item) => item.trim().toLowerCase() === hr)
+})
+
+const isJdPreferred = computed(() => {
+  if (!conf.formData.jdPreference.enable || !props.job.jobDescription) {
+    return false
+  }
+  const description = props.job.jobDescription.toLowerCase()
+  return conf.formData.jdPreference.value.some(
+    (item) => item && description.includes(item.toLowerCase()),
+  )
+})
+
+const activeTimeLabel = computed(() => {
+  const job = props.job
+  if (!job.activeTime && !job.activeTimeStr) {
+    return ''
+  }
+  const date = job.activeTime
+    ? new Date(job.activeTime).toLocaleDateString('zh-CN', {
+        month: '2-digit',
+        day: '2-digit',
+      })
+    : ''
+  return [date, job.activeTimeStr].filter(Boolean).join(' · ')
+})
+
 async function showDescriptionHandler() {
   showDescription.value = true
   showDescriptionLoading.value = true
@@ -70,21 +106,49 @@ function getActiveTimeType(job: JobData): 'success' | 'warning' | 'error' {
 <template>
   <div
     class="job-card"
-    :class="{ 'job-card-hover': hover }"
+    :class="{
+      'job-card-hover': hover,
+      'job-card-blocked': isCompanyBlocked || isHrBlocked,
+      'job-card-preferred': isJdPreferred,
+    }"
     :style="{
       '--state-color': jobStatus.color,
       '--state-show': jobStatus.show,
     }"
     v-if="job"
   >
-    <div class="card-tag">{{ job.brand.industry }},{{ job.degreeName }},{{ job.brand.scale }}</div>
+    <div class="card-tag">
+      <span
+        v-if="isCompanyBlocked || isHrBlocked"
+        class="rule-flag blocked"
+        title="公司或 HR 已屏蔽"
+      >
+        屏蔽
+      </span>
+      <span v-if="isJdPreferred" class="rule-flag preferred" title="命中 JD 倾向">倾向</span>
+      <span class="card-tag-text"
+        >{{ job.brand.industry }} · {{ job.degreeName }} · {{ job.brand.scale }}</span
+      >
+    </div>
     <!-- `https://www.zhipin.com/job_detail/${job.encryptJobId}.html`" -->
     <a :href="job.link" target="_blank" class="card-title">
       {{ job.jobName }}
     </a>
-    <h3 class="card-salary">
-      {{ job.salary }}
-    </h3>
+    <div class="salary-row">
+      <h3 class="card-salary">
+        {{ job.salary }}
+      </h3>
+      <span
+        v-if="activeTimeLabel"
+        class="active-pill"
+        :class="getActiveTimeType(job)"
+        :title="
+          job.activeTime ? new Date(job.activeTime).toLocaleString('zh-CN') : job.activeTimeStr
+        "
+      >
+        {{ activeTimeLabel }}
+      </span>
+    </div>
     <div
       v-show="showDescription"
       class="card-content"
@@ -104,41 +168,32 @@ function getActiveTimeType(job: JobData): 'success' | 'warning' | 'error' {
       </template>
     </div>
     <div v-show="!showDescription" class="card-content" @click="showDescriptionHandler">
-      <div>
-        <div class="flex flex-wrap gap-1">
-          <UBadge v-for="tag in job.skills" :key="tag" size="sm" variant="subtle" color="warning">
+      <div v-if="job.skills.length || job.jobLabels.length">
+        <div class="tag-list">
+          <span v-for="tag in job.skills" :key="tag" class="tag-chip skill">
             {{ tag }}
-          </UBadge>
-          <UBadge
-            v-for="tag in job.jobLabels"
-            :key="tag"
-            size="sm"
-            variant="subtle"
-            color="success"
-          >
+          </span>
+          <span v-for="tag in job.jobLabels" :key="tag" class="tag-chip label">
             {{ tag }}
-          </UBadge>
+          </span>
         </div>
       </div>
-      <div class="card-footer" v-if="job.welfareList && job.welfareList.length > 0">
-        {{ job.welfareList.join(',') }}
+      <div v-if="!job.skills.length && !job.jobLabels.length" class="jd-placeholder">
+        点击加载 JD，右键可屏蔽公司 / HR 或添加倾向
       </div>
-    </div>
-
-    <div v-if="job.activeTime || job.activeTimeStr" class="active-time-tag">
-      <UBadge :color="getActiveTimeType(job)" variant="subtle">
-        活跃时间：{{
-          job.activeTime
-            ? `${new Date(job.activeTime).toLocaleString('zh')}${job.activeTimeStr ? ` (${job.activeTimeStr})` : ''}`
-            : job.activeTimeStr
-        }}
-      </UBadge>
+      <div class="card-footer" v-if="job.welfareList && job.welfareList.length > 0">
+        <span class="footer-label">福利</span>
+        <div class="footer-text">{{ job.welfareList.join(' · ') }}</div>
+      </div>
     </div>
 
     <div class="author-row">
       <img alt="" class="avatar" height="80" :src="job.brand.logo" width="80" />
-      <div>
+      <div class="author-text">
         <span class="company-name">{{ job.brand.name }}</span>
+        <div v-if="job.boss.name || job.boss.title" class="boss-line">
+          {{ [job.boss.name, job.boss.title].filter(Boolean).join(' · ') }}
+        </div>
         <!-- <h4>{{ job.cityName }}/{{ job.areaDistrict }}/{{ job.businessDistrict }}</h4> -->
         <h4>{{ job.address }}</h4>
       </div>
